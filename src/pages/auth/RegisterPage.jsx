@@ -10,14 +10,10 @@ import Spinner from "@/components/ui/Spinner";
 import { useNavigate } from "react-router-dom";
 
 import TextInput from "@/components/form/TextInput";
-import PhoneInput from "@/components/form/PhoneInput";
 import Select from "@/components/form/Select";
 import AccentButton from "@/components/ui/AccentButton";
 import Heading from "@/components/ui/Heading";
 
-// ==========================
-// Validation Schema
-// ==========================
 const schema = Yup.object().shape({
   full_name: Yup.string().required("Full name is required"),
   email: Yup.string().email("Invalid email").required("Email is required"),
@@ -25,9 +21,6 @@ const schema = Yup.object().shape({
   role_id: Yup.string().required("Role is required"),
 });
 
-// ==========================
-// Static Roles
-// ==========================
 const ROLE_OPTIONS = [
   { value: "1", label: "Admin" },
   { value: "2", label: "Manager" },
@@ -58,7 +51,6 @@ const RegisterPage = () => {
         email: data.email,
         password: data.password,
         role_id: data.role_id,
-        phone: data.phone || null,
       };
 
       const res = await API.private.registerUser(payload);
@@ -66,7 +58,7 @@ const RegisterPage = () => {
       if (res.data.code === "OK") {
         Notification.success(res.data.data?.message || "Registration successful!");
         reset();
-        navigate("/login"); // ✅ redirect to login
+        navigate("/login");
       } else {
         Notification.error(res.data.error || "Unexpected response from server.");
       }
@@ -90,19 +82,14 @@ const RegisterPage = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
           <TextInput placeholder="Enter Your Full Name" {...register("full_name")} error={errors.full_name?.message} />
+
           <TextInput type="email" placeholder="Enter Your Email" {...register("email")} error={errors.email?.message} />
+
           <TextInput
             type="password"
             placeholder="Password"
             {...register("password")}
             error={errors.password?.message}
-          />
-
-          <PhoneInput
-            label="Phone (Optional)"
-            value={watch("phone") || ""}
-            onChange={(val) => setValue("phone", val)}
-            error={errors.phone?.message}
           />
 
           <Select
