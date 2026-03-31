@@ -6,7 +6,7 @@ const Select = ({ value, onChange, options = [], placeholder = "Select", error, 
     control: (base, state) => ({
       ...base,
       backgroundColor: "#fff",
-      borderColor: error ? "#f87171" : state.isFocused ? "#f59e0b" : "#d1d5db",
+      borderColor: error ? "#f87171" : state.isFocused ? "#4f8f2f" : "#d1d5db",
       boxShadow: "none",
       color: "#111827",
     }),
@@ -28,7 +28,7 @@ const Select = ({ value, onChange, options = [], placeholder = "Select", error, 
     }),
     option: (base, { isFocused }) => ({
       ...base,
-      backgroundColor: isFocused ? "#f59e0b" : "#fff",
+      backgroundColor: isFocused ? "#4f8f2f" : "#fff",
       color: isFocused ? "#fff" : "#111827",
       cursor: "pointer",
     }),
@@ -49,6 +49,9 @@ const Select = ({ value, onChange, options = [], placeholder = "Select", error, 
         styles={customStyles}
         classNamePrefix="react-select"
         menuPortalTarget={document.body}
+        classNames={{
+          menuList: () => "app-scrollbar",
+        }}
         {...rest}
       />
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}

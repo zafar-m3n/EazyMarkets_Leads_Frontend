@@ -6,7 +6,7 @@ const MultiSelect = ({ value = [], onChange, options = [], placeholder = "Select
     control: (base, state) => ({
       ...base,
       backgroundColor: "#fff",
-      borderColor: error ? "#f87171" : state.isFocused ? "#f59e0b" : "#d1d5db",
+      borderColor: error ? "#f87171" : state.isFocused ? "#4f8f2f" : "#d1d5db",
       boxShadow: "none",
       color: "#111827",
     }),
@@ -24,7 +24,7 @@ const MultiSelect = ({ value = [], onChange, options = [], placeholder = "Select
     }),
     multiValue: (base) => ({
       ...base,
-      backgroundColor: "#f3f4f6", // light gray for selected tags
+      backgroundColor: "#f3f4f6",
       borderRadius: "4px",
       padding: "0 2px",
     }),
@@ -43,7 +43,7 @@ const MultiSelect = ({ value = [], onChange, options = [], placeholder = "Select
     }),
     option: (base, { isFocused, isSelected }) => ({
       ...base,
-      backgroundColor: isSelected ? "#f59e0b" : isFocused ? "#fde68a" : "#fff",
+      backgroundColor: isSelected ? "#4f8f2f" : isFocused ? "#d9e9cf" : "#fff",
       color: isSelected ? "#fff" : "#111827",
       cursor: "pointer",
     }),
@@ -65,6 +65,9 @@ const MultiSelect = ({ value = [], onChange, options = [], placeholder = "Select
         styles={customStyles}
         classNamePrefix="react-select"
         menuPortalTarget={document.body}
+        classNames={{
+          menuList: () => "app-scrollbar",
+        }}
         {...rest}
       />
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
