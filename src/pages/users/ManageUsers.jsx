@@ -16,6 +16,7 @@ const ManageUsers = () => {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const [isFetching, setIsFetching] = useState(false);
 
   const [page, setPage] = useState(1);
@@ -35,7 +36,7 @@ const ManageUsers = () => {
 
       if (res.data.code === "OK") {
         setUsers(res.data.data.users || []);
-        setTotalPages(res.data.data.pagination.totalPages || 1);
+        setTotalPages(res.data.data.pagination?.totalPages || 1);
       } else {
         Notification.error(res.data.error || "Failed to fetch users");
       }
@@ -51,7 +52,12 @@ const ManageUsers = () => {
       const res = await API.private.getRoles();
 
       if (res.data.code === "OK") {
-        setRoles((res.data.data || []).map((role) => ({ value: role.id, label: role.label })));
+        setRoles(
+          (res.data.data || []).map((role) => ({
+            value: role.id,
+            label: role.label,
+          })),
+        );
       } else {
         Notification.error(res.data.error || "Failed to fetch roles");
       }
@@ -73,7 +79,13 @@ const ManageUsers = () => {
 
     try {
       if (editingUser) {
-        const res = await API.private.updateUser(editingUser.id, data);
+        const payload = { ...data };
+
+        if (!payload.password || payload.password.trim() === "") {
+          delete payload.password;
+        }
+
+        const res = await API.private.updateUser(editingUser.id, payload);
 
         if (res.data.code === "OK") {
           Notification.success("User updated successfully");
@@ -187,7 +199,7 @@ const ManageUsers = () => {
               renderCell={(row, col) => {
                 switch (col.key) {
                   case "role":
-                    return row.Role?.label || row.role?.label || "-";
+                    return row.Role?.label || "-";
 
                   case "actions":
                     return (

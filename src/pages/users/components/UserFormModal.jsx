@@ -15,9 +15,15 @@ const schema = Yup.object().shape({
   password: Yup.string().when("isEdit", {
     is: false,
     then: (s) => s.min(6, "Minimum 6 characters").required("Password is required"),
-    otherwise: (s) => s.notRequired(),
+    otherwise: (s) =>
+      s.test(
+        "password-edit-validation",
+        "Minimum 6 characters",
+        (value) => !value || value.trim() === "" || value.trim().length >= 6,
+      ),
   }),
   role_id: Yup.mixed().required("Role is required"),
+  isEdit: Yup.boolean(),
 });
 
 const emptyValues = {
@@ -48,8 +54,8 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, editingUser, roles, loading 
       reset({
         full_name: editingUser.full_name || "",
         email: editingUser.email || "",
-        role_id: editingUser.Role?.id ?? editingUser.role_id ?? "",
         password: "",
+        role_id: editingUser.Role?.id ?? editingUser.role_id ?? "",
         isEdit: true,
       });
     } else {
@@ -66,6 +72,8 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, editingUser, roles, loading 
 
     if (!editingUser) {
       payload.password = data.password;
+    } else if (data.password && data.password.trim() !== "") {
+      payload.password = data.password.trim();
     }
 
     onSubmit(payload);
@@ -89,20 +97,18 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, editingUser, roles, loading 
           error={errors.email?.message}
         />
 
-        {!editingUser && (
-          <TextInput
-            label="Password"
-            type="password"
-            placeholder="Enter password"
-            {...register("password")}
-            error={errors.password?.message}
-          />
-        )}
+        <TextInput
+          label={editingUser ? "Password (leave blank to keep current)" : "Password"}
+          type="password"
+          placeholder={editingUser ? "Enter new password" : "Enter password"}
+          {...register("password")}
+          error={errors.password?.message}
+        />
 
         <Select
           label="Role"
           value={watch("role_id") ?? ""}
-          onChange={(val) => setValue("role_id", val)}
+          onChange={(val) => setValue("role_id", val, { shouldValidate: true })}
           options={roles}
           placeholder="Select Role"
           error={errors.role_id?.message}
@@ -118,6 +124,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, editingUser, roles, loading 
               }}
             />
           </div>
+
           <div className="w-fit">
             <AccentButton type="submit" text={editingUser ? "Update User" : "Create User"} loading={loading} />
           </div>
