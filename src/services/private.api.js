@@ -452,14 +452,20 @@ const downloadLeadsExport = async (filters = {}) => {
 /* ========================== */
 /* Reports Functions          */
 /* ========================== */
+/* ========================== */
+/* Reports Functions          */
+/* ========================== */
 
-// GET /api/v1/reports/monthly?year=YYYY&month=MM
-// params: { year?: number, month?: number }
-// - year: 2025–2035
-// - month: 1–12 (1 = January)
-// If you omit them, backend will default to current month.
-const getMonthlyReports = async (params = {}) => {
-  return await instance.apiClient.get("/api/v1/reports/monthly", {
+// Load agents available for the reports filter dropdown
+const getReportAgents = async () => {
+  return await instance.apiClient.get("/api/v1/reports/agents", {
+    headers: instance.defaultHeaders(),
+  });
+};
+
+// Load reports based on selected report type + filters
+const getReports = async (params = {}) => {
+  return await instance.apiClient.get("/api/v1/reports", {
     headers: instance.defaultHeaders(),
     params,
   });
@@ -553,7 +559,9 @@ const privateAPI = {
   downloadLeadsExport,
 
   // Reports
-  getMonthlyReports,
+  // Reports
+  getReportAgents,
+  getReports,
 };
 
 export default privateAPI;
