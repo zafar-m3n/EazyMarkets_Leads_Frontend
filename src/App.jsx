@@ -28,7 +28,6 @@ import LeadExport from "@/pages/leadexport";
 
 // Reports
 import AdminReports from "@/pages/reports/AdminReports";
-import ManagerReports from "@/pages/reports/ManagerReports";
 
 // Profile
 import ManagerProfile from "@/pages/profile/ManagerProfile";
@@ -69,7 +68,6 @@ const protectedRoutes = [
 
   // Reports
   { path: "/admin/reports", element: AdminReports, roles: ["admin"] },
-  { path: "/manager/reports", element: ManagerReports, roles: ["manager"] },
 
   // Profile
   { path: "/manager/profile", element: ManagerProfile, roles: ["manager"] },
