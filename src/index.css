@@ -83,3 +83,251 @@
 .app-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #64748b; /* slate-500 */
 }
+
+/* ================= DATE TIME PICKER ================= */
+
+.note-datetime-popper {
+  z-index: 70 !important;
+}
+
+.note-datetime-popper .react-datepicker {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch;
+  border: 1px solid rgb(229 231 235);
+  border-radius: 20px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow:
+    0 28px 60px rgba(15, 23, 42, 0.18),
+    0 10px 24px rgba(15, 23, 42, 0.1);
+  font-family: inherit;
+}
+
+.note-datetime-popper .react-datepicker__triangle {
+  display: none;
+}
+
+.note-datetime-popper .react-datepicker__month-container {
+  flex: 1 1 auto;
+  min-width: 320px;
+  background: #ffffff;
+}
+
+.note-datetime-popper .react-datepicker__header {
+  position: relative;
+  background: linear-gradient(to bottom, #ffffff, #f9fafb);
+  border-bottom: 1px solid rgb(243 244 246);
+  padding: 14px 44px 10px;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.note-datetime-popper .react-datepicker__header--time {
+  background: linear-gradient(to bottom, #ffffff, #f9fafb);
+  border-bottom: 1px solid rgb(243 244 246);
+  padding: 14px 12px 10px;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.note-datetime-popper .react-datepicker__current-month {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: rgb(17 24 39);
+  text-align: center;
+}
+
+.note-datetime-popper .react-datepicker-time__header {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: rgb(17 24 39);
+  text-align: center;
+}
+
+.note-datetime-popper .react-datepicker__navigation {
+  top: 18px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px;
+  transition:
+    background-color 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.note-datetime-popper .react-datepicker__navigation:hover {
+  background: rgb(243 244 246);
+}
+
+.react-datepicker__navigation--next--with-time:not(.react-datepicker__navigation--next--with-today-button) {
+  right: 135px;
+}
+.note-datetime-popper .react-datepicker__navigation-icon::before {
+  top: 10px;
+  left: -5px;
+  border-color: rgb(107 114 128);
+  border-width: 2px 2px 0 0;
+  height: 8px;
+  width: 8px;
+}
+
+.note-datetime-popper .react-datepicker__day-names {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.note-datetime-popper .react-datepicker__day-name {
+  width: 2.4rem;
+  line-height: 2rem;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgb(107 114 128);
+  text-transform: uppercase;
+}
+
+.note-datetime-popper .react-datepicker__month {
+  margin: 0;
+  padding: 0 14px 14px;
+}
+
+.note-datetime-popper .react-datepicker__week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.note-datetime-popper .react-datepicker__day {
+  width: 2.4rem;
+  line-height: 2.4rem;
+  margin: 0;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgb(31 41 55);
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.note-datetime-popper .react-datepicker__day:hover {
+  background: rgb(243 244 246);
+  color: rgb(17 24 39);
+}
+
+.note-datetime-popper .react-datepicker__day--keyboard-selected {
+  background: rgba(126, 217, 87, 0.14);
+  color: rgb(17 24 39);
+  font-weight: 600;
+}
+
+.note-datetime-popper .react-datepicker__day--selected,
+.note-datetime-popper .react-datepicker__day--selected:hover,
+.note-datetime-popper .react-datepicker__time-list-item--selected,
+.note-datetime-popper .react-datepicker__time-list-item--selected:hover {
+  background: #7ed957 !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(126, 217, 87, 0.28);
+}
+
+.note-datetime-popper .react-datepicker__day--today {
+  position: relative;
+  font-weight: 700;
+  color: rgb(17 24 39);
+}
+
+.note-datetime-popper .react-datepicker__day--today:not(.react-datepicker__day--selected) {
+  background: rgb(240 253 244);
+}
+
+.note-datetime-popper .react-datepicker__day--outside-month {
+  color: rgb(209 213 219);
+}
+
+.note-datetime-popper .react-datepicker__day--disabled {
+  color: rgb(209 213 219);
+  cursor: not-allowed;
+}
+
+.note-datetime-popper .react-datepicker__time-container {
+  width: 130px;
+  min-width: 130px;
+  border-left: 1px solid rgb(229 231 235);
+  background: #fcfcfd;
+  display: flex;
+  flex-direction: column;
+  box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.03);
+}
+
+.note-datetime-popper .react-datepicker__time {
+  flex: 1;
+  background: transparent;
+}
+
+.note-datetime-popper .react-datepicker__time-box {
+  width: 100% !important;
+  height: 100%;
+}
+
+.note-datetime-popper .react-datepicker__time-list {
+  height: 260px !important;
+  padding: 8px !important;
+  overflow-y: auto;
+}
+
+.note-datetime-popper .react-datepicker__time-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.note-datetime-popper .react-datepicker__time-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.note-datetime-popper .react-datepicker__time-list::-webkit-scrollbar-thumb {
+  background: rgb(209 213 219);
+  border-radius: 9999px;
+}
+
+.note-datetime-popper .react-datepicker__time-list::-webkit-scrollbar-thumb:hover {
+  background: rgb(156 163 175);
+}
+
+.note-datetime-popper .react-datepicker__time-list-item {
+  height: 36px !important;
+  line-height: 36px !important;
+  margin-bottom: 4px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgb(55 65 81);
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.note-datetime-popper .react-datepicker__time-list-item:hover {
+  background: rgb(243 244 246) !important;
+  color: rgb(17 24 39);
+}
+
+.note-datetime-popper .react-datepicker__time-list-item--disabled {
+  color: rgb(209 213 219) !important;
+  cursor: not-allowed;
+}
+
+.note-datetime-popper .react-datepicker__aria-live {
+  display: none;
+}

@@ -294,7 +294,7 @@ const LeadsFiltersToolbar = ({
             disabled={!hasActiveFilters}
             className={`inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm transition ${
               hasActiveFilters
-                ? "bg-amber-500 text-white hover:bg-amber-600"
+                ? "bg-accent text-white hover:bg-accent/80"
                 : "bg-gray-200 text-gray-500 cursor-not-allowed"
             }`}
             title="Reset all filters"

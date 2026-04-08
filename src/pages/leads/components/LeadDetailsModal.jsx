@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import API from "@/services/index";
 import Notification from "@/components/ui/Notification";
 import Spinner from "@/components/ui/Spinner";
@@ -9,7 +9,10 @@ import Badge from "@/components/ui/Badge";
 import LeadFormModal from "./LeadFormModal";
 import Modal from "@/components/ui/Modal";
 import Tooltip from "@/components/ui/Tooltip";
+import TextInput from "@/components/form/TextInput";
 import token from "@/lib/utilities";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const initialsFromName = (first, last) => {
   try {
@@ -23,6 +26,40 @@ const initialsFromName = (first, last) => {
     return "U";
   }
 };
+
+const parseNoteDateTimeValue = (value) => {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+const formatSelectedNoteDateTime = (value) => {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleString();
+  } catch {
+    return "";
+  }
+};
+
+const NoteDateTimeTrigger = React.forwardRef(({ onClick, active }, ref) => (
+  <button
+    type="button"
+    ref={ref}
+    onClick={onClick}
+    className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition ${
+      active
+        ? "border-accent bg-accent/10 text-accent"
+        : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-accent"
+    }`}
+    aria-label="Select note date and time"
+    title="Select note date and time"
+  >
+    <Icon icon="mdi:calendar-clock-outline" width={18} />
+  </button>
+));
+
+NoteDateTimeTrigger.displayName = "NoteDateTimeTrigger";
 
 const formatDateTime = (value) => {
   if (!value) return "N/A";
@@ -98,7 +135,17 @@ const LeadDetailsModal = ({
   const [saving, setSaving] = useState(false);
 
   const [noteInput, setNoteInput] = useState("");
+  const [noteDateTime, setNoteDateTime] = useState(null);
   const [submittingNote, setSubmittingNote] = useState(false);
+
+  const [isNotePickerOpen, setIsNotePickerOpen] = useState(false);
+
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editingNoteBody, setEditingNoteBody] = useState("");
+  const [updatingNote, setUpdatingNote] = useState(false);
+
+  const notePickerWrapRef = useRef(null);
+  const notePickerRef = useRef(null);
 
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [isDeleteNoteModalOpen, setIsDeleteNoteModalOpen] = useState(false);
@@ -139,12 +186,32 @@ const LeadDetailsModal = ({
   useEffect(() => {
     if (isOpen && leadId) {
       setNoteInput("");
+      setNoteDateTime(null);
+      setIsNotePickerOpen(false);
+      setEditingNoteId(null);
+      setEditingNoteBody("");
       fetchLead(leadId);
     } else {
       setLead(null);
       setNoteInput("");
+      setNoteDateTime(null);
+      setIsNotePickerOpen(false);
+      setEditingNoteId(null);
+      setEditingNoteBody("");
     }
   }, [isOpen, leadId]);
+
+  useEffect(() => {
+    if (!isNotePickerOpen) return;
+
+    const handleOutsideClick = (e) => {
+      if (notePickerWrapRef.current?.contains(e.target) || notePickerRef.current?.contains(e.target)) return;
+      setIsNotePickerOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [isNotePickerOpen]);
 
   const handleSubmit = async (data) => {
     if (!leadId) return;
@@ -173,15 +240,56 @@ const LeadDetailsModal = ({
 
     setSubmittingNote(true);
     try {
-      await API.private.updateLead(leadId, { notes: noteInput.trim() });
+      await API.private.updateLead(leadId, {
+        notes: noteInput.trim(),
+        note_datetime: noteDateTime ? noteDateTime.toISOString() : undefined,
+      });
       Notification.success("Note added successfully");
       setNoteInput("");
+      setNoteDateTime(null);
+      setIsNotePickerOpen(false);
       await fetchLead(leadId);
       await onLeadUpdated?.();
     } catch (err) {
       Notification.error(err.response?.data?.error || "Failed to add note");
     } finally {
       setSubmittingNote(false);
+    }
+  };
+
+  const handleStartEditNote = (note) => {
+    setEditingNoteId(note.id);
+    setEditingNoteBody(note.body || "");
+  };
+
+  const handleCancelEditNote = () => {
+    setEditingNoteId(null);
+    setEditingNoteBody("");
+  };
+
+  const handleSaveEditNote = async (noteId) => {
+    if (!leadId || !noteId) return;
+
+    if (!editingNoteBody.trim()) {
+      Notification.error("Note cannot be empty");
+      return;
+    }
+
+    setUpdatingNote(true);
+    try {
+      await API.private.updateLeadNote(leadId, noteId, {
+        body: editingNoteBody.trim(),
+      });
+
+      Notification.success("Note updated successfully");
+      setEditingNoteId(null);
+      setEditingNoteBody("");
+      await fetchLead(leadId);
+      await onLeadUpdated?.();
+    } catch (err) {
+      Notification.error(err.response?.data?.error || "Failed to update note");
+    } finally {
+      setUpdatingNote(false);
     }
   };
 
@@ -351,30 +459,87 @@ const LeadDetailsModal = ({
                           className="group rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-4 transition hover:shadow-sm"
                         >
                           <div className="flex items-start justify-between gap-4">
-                            <div className="flex min-w-0 gap-3">
+                            <div className="flex min-w-0 flex-1 gap-3">
                               <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent/10 font-semibold text-accent">
                                 {authorInitials}
                               </div>
 
-                              <div className="min-w-0">
-                                <p className="break-words text-sm leading-relaxed text-gray-800">{note.body}</p>
-                                <div className="mt-2 text-xs text-gray-500">
-                                  by {fullName} · {formatDateTime(note.created_at)}
-                                </div>
+                              <div className="min-w-0 flex-1">
+                                {editingNoteId === note.id ? (
+                                  <div className="space-y-2">
+                                    <TextInput
+                                      value={editingNoteBody}
+                                      onChange={(e) => setEditingNoteBody(e.target.value)}
+                                      placeholder="Edit note..."
+                                      className="rounded-xl"
+                                    />
+
+                                    <div className="mt-2 text-xs text-gray-500">
+                                      by {fullName} · {formatDateTime(note.created_at)}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <p className="break-words text-sm leading-relaxed text-gray-800">{note.body}</p>
+                                    <div className="mt-2 text-xs text-gray-500">
+                                      by {fullName} · {formatDateTime(note.created_at)}
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </div>
 
-                            {isAdminOrManager && (
-                              <Tooltip content="Delete note" placement="top" theme="light">
-                                <button
-                                  onClick={() => confirmDeleteNote(note)}
-                                  className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition hover:bg-red-50 hover:text-red-600"
-                                  aria-label="Delete note"
-                                >
-                                  <Icon icon="mdi:delete-outline" width={18} />
-                                </button>
-                              </Tooltip>
-                            )}
+                            <div className="flex flex-shrink-0 items-center gap-2">
+                              {editingNoteId === note.id ? (
+                                <>
+                                  <Tooltip content="Save note" placement="top" theme="light">
+                                    <button
+                                      onClick={() => handleSaveEditNote(note.id)}
+                                      disabled={updatingNote}
+                                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-green-600 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                      aria-label="Save note"
+                                    >
+                                      <Icon icon="mdi:check" width={18} />
+                                    </button>
+                                  </Tooltip>
+
+                                  <Tooltip content="Cancel edit" placement="top" theme="light">
+                                    <button
+                                      onClick={handleCancelEditNote}
+                                      disabled={updatingNote}
+                                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                      aria-label="Cancel edit"
+                                    >
+                                      <Icon icon="mdi:close" width={18} />
+                                    </button>
+                                  </Tooltip>
+                                </>
+                              ) : (
+                                <>
+                                  <Tooltip content="Edit note" placement="top" theme="light">
+                                    <button
+                                      onClick={() => handleStartEditNote(note)}
+                                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition hover:bg-accent/10 hover:text-accent"
+                                      aria-label="Edit note"
+                                    >
+                                      <Icon icon="mdi:pencil-outline" width={18} />
+                                    </button>
+                                  </Tooltip>
+
+                                  {isAdminOrManager && (
+                                    <Tooltip content="Delete note" placement="top" theme="light">
+                                      <button
+                                        onClick={() => confirmDeleteNote(note)}
+                                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition hover:bg-red-50 hover:text-red-600"
+                                        aria-label="Delete note"
+                                      >
+                                        <Icon icon="mdi:delete-outline" width={18} />
+                                      </button>
+                                    </Tooltip>
+                                  )}
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
@@ -386,18 +551,70 @@ const LeadDetailsModal = ({
                   )}
                 </div>
 
-                <div className="mt-6 space-y-3 border-t border-gray-200 pt-5">
-                  <textarea
-                    value={noteInput}
-                    onChange={(e) => setNoteInput(e.target.value)}
-                    rows={4}
-                    placeholder="Write a new note..."
-                    className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
+                <div className="relative mt-6 space-y-3 border-t border-gray-200 pt-5">
+                  <div className="relative" ref={notePickerWrapRef}>
+                    <textarea
+                      value={noteInput}
+                      onChange={(e) => setNoteInput(e.target.value)}
+                      rows={4}
+                      placeholder="Write a new note..."
+                      className="w-full rounded-2xl border border-gray-300 px-4 py-3 pr-14 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+
+                    <div className="absolute right-3 top-3">
+                      <DatePicker
+                        ref={notePickerRef}
+                        selected={noteDateTime}
+                        onChange={(date) => {
+                          setNoteDateTime(parseNoteDateTimeValue(date));
+                          setIsNotePickerOpen(false);
+                        }}
+                        onClickOutside={() => setIsNotePickerOpen(false)}
+                        onCalendarOpen={() => setIsNotePickerOpen(true)}
+                        onCalendarClose={() => setIsNotePickerOpen(false)}
+                        open={isNotePickerOpen}
+                        onInputClick={() => setIsNotePickerOpen(true)}
+                        showTimeSelect
+                        timeIntervals={5}
+                        dateFormat="yyyy-MM-dd h:mm aa"
+                        maxDate={new Date()}
+                        customInput={<NoteDateTimeTrigger active={!!noteDateTime || isNotePickerOpen} />}
+                        popperPlacement="top-end"
+                        popperClassName="note-datetime-popper"
+                      />
+                    </div>
+
+                    {isNotePickerOpen && (
+                      <div className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-accent/20" />
+                    )}
+                  </div>
+
+                  {noteDateTime && (
+                    <div className="flex items-center gap-2 rounded-xl border border-accent/15 bg-accent/5 px-3 py-2 text-xs text-gray-700">
+                      <Icon icon="mdi:calendar-clock-outline" width={16} className="text-accent" />
+                      <span>Selected note date & time: {formatSelectedNoteDateTime(noteDateTime)}</span>
+
+                      <button
+                        type="button"
+                        onClick={() => setNoteDateTime(null)}
+                        className="ml-auto inline-flex items-center rounded-md px-2 py-1 text-xs text-gray-500 transition hover:bg-black/5 hover:text-gray-700"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  )}
 
                   <div className="flex justify-end gap-2">
                     <div className="w-fit">
-                      <GrayButton text="Clear" onClick={() => setNoteInput("")} disabled={submittingNote} />
+                      <GrayButton
+                        text="Clear"
+                        onClick={() => {
+                          setNoteInput("");
+                          setNoteDateTime(null);
+                          setIsNotePickerOpen(false);
+                        }}
+                        disabled={submittingNote}
+                      />
                     </div>
                     <div className="w-fit">
                       <AccentButton text="Add Note" onClick={handleAddNote} loading={submittingNote} />
