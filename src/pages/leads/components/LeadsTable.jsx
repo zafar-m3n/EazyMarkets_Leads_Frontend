@@ -400,7 +400,12 @@ const LeadsTable = ({
               const phone = row.phone && row.phone.length > 4 ? row.phone : "N/A";
               const assigneeName = getCurrentAssigneeName(row);
               const created = formatDate(row.created_at);
-              const lastContacted = formatDate(row.updated_at);
+              const lastContacted =
+                row.created_at &&
+                row.updated_at &&
+                new Date(row.created_at).getTime() === new Date(row.updated_at).getTime()
+                  ? "Not contacted yet"
+                  : formatDate(row.updated_at);
 
               const reassignable = canReassign(row);
               const isChecked = selectedIds.includes(row.id);
