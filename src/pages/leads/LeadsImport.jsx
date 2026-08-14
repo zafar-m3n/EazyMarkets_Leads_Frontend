@@ -14,6 +14,19 @@ import Papa from "papaparse";
 
 const OTHER_SOURCE_VALUE = "__other__";
 
+const NOTE_LABELS = {
+  empty_row: "Row is completely empty",
+  missing_contact_method: "No email or phone provided",
+  missing_name: "No first or last name provided",
+  invalid_email_format: "Email format is invalid",
+  duplicate_email_in_file: "Duplicate email within this file",
+  duplicate_phone_in_file: "Duplicate phone within this file",
+  duplicate_email_in_db: "Email already exists in your leads",
+  duplicate_phone_in_db: "Phone already exists in your leads",
+};
+
+const describeNote = (note) => NOTE_LABELS[note] || note;
+
 const LeadsImport = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -33,6 +46,7 @@ const LeadsImport = () => {
 
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState(null);
+  const [partialFailure, setPartialFailure] = useState(false);
 
   const [redirectIn, setRedirectIn] = useState(5);
 
@@ -146,6 +160,7 @@ const LeadsImport = () => {
     setParseError("");
     setRows([]);
     setResult(null);
+    setPartialFailure(false);
 
     const name = f.name.toLowerCase();
     if (!name.endsWith(".csv")) {
@@ -200,6 +215,7 @@ const LeadsImport = () => {
 
     setImporting(true);
     setResult(null);
+    setPartialFailure(false);
 
     try {
       const payload = {
@@ -217,6 +233,14 @@ const LeadsImport = () => {
         setResult(res.data);
       }
     } catch (err) {
+      const status = err.response?.status;
+      const errorSummary = err.response?.data?.summary;
+
+      // A 500 with no summary means the import was processed in batches and
+      // failed partway through — earlier batches may have already committed,
+      // so we can't claim "nothing was imported" here.
+      setPartialFailure(status === 500 && !errorSummary);
+
       Notification.error(err.response?.data?.error || "Import failed");
       setResult({
         success: false,
@@ -333,7 +357,7 @@ const LeadsImport = () => {
                                 <span className="opacity-70"> – </span>
                               </>
                             ) : null}
-                            {n.note}
+                            {describeNote(n.note)}
                           </li>
                         ))}
                       </ul>
@@ -361,6 +385,21 @@ const LeadsImport = () => {
                   <p className="font-medium">Import failed</p>
                   <p className="mt-1 text-sm">{result.error}</p>
 
+                  {partialFailure && (
+                    <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+                      <p className="text-sm font-medium">Some leads may have already been imported</p>
+                      <p className="mt-1 text-sm">
+                        Large files are imported in batches. This error occurred partway through, so some leads from
+                        earlier in the file could already be in your account. Please check the{" "}
+                        <span className="font-semibold">Leads</span> list before re-uploading, to avoid creating
+                        duplicates.
+                      </p>
+                      <div className="mt-3 w-fit">
+                        <AccentButton text="Check Leads list" onClick={() => navigate("/admin/leads")} />
+                      </div>
+                    </div>
+                  )}
+
                   {result.details?.notes && result.details.notes.length > 0 && (
                     <div className="mt-4">
                       <p className="font-medium">Details</p>
@@ -379,7 +418,7 @@ const LeadsImport = () => {
                                 <span className="opacity-70"> – </span>
                               </>
                             ) : null}
-                            {n.note}
+                            {describeNote(n.note)}
                           </li>
                         ))}
                       </ul>
@@ -539,7 +578,8 @@ const LeadsImport = () => {
 
               <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
                 <p className="text-sm text-gray-700">
-                  Maximum recommended size: <span className="font-semibold">300 rows</span> per import.
+                  Large files are processed in batches of <span className="font-semibold">300 rows</span>. If an error
+                  occurs partway through, rows from earlier batches may already be imported.
                 </p>
               </div>
 

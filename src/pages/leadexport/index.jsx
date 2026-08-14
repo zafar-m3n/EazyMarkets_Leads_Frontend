@@ -41,15 +41,18 @@ const LeadExport = () => {
   // lookups
   const [statuses, setStatuses] = useState([]);
   const [sources, setSources] = useState([]);
+  const [assigneeOptions, setAssigneeOptions] = useState([]);
   const [loadingLookups, setLoadingLookups] = useState(false);
 
   // filters
   const [statusIds, setStatusIds] = useState([]);
   const [sourceIds, setSourceIds] = useState([]);
+  const [assigneeIds, setAssigneeIds] = useState([]);
 
   // debounced filters
   const dStatusIds = useDebounce(statusIds);
   const dSourceIds = useDebounce(sourceIds);
+  const dAssigneeIds = useDebounce(assigneeIds);
 
   // count / export
   const [countLoading, setCountLoading] = useState(false);
@@ -82,18 +85,36 @@ const LeadExport = () => {
     }
   }, []);
 
+  const fetchAssignees = useCallback(async () => {
+    try {
+      const res = await API.private.getAssignees();
+      if (res.data?.code === "OK") {
+        const all = res.data.data || [];
+        setAssigneeOptions(
+          all.map((u) => ({
+            value: u.id,
+            label: u.full_name ? `${u.full_name} (${u.email})` : u.email,
+          })),
+        );
+      }
+    } catch {
+      Notification.error("Failed to load agents");
+    }
+  }, []);
+
   useEffect(() => {
     (async () => {
       setLoadingLookups(true);
-      await Promise.all([fetchStatuses(), fetchSources()]);
+      await Promise.all([fetchStatuses(), fetchSources(), fetchAssignees()]);
       setLoadingLookups(false);
       didLoadLookups.current = true;
     })();
-  }, [fetchStatuses, fetchSources]);
+  }, [fetchStatuses, fetchSources, fetchAssignees]);
 
-  const buildFilters = (ids1 = statusIds, ids2 = sourceIds) => ({
+  const buildFilters = (ids1 = statusIds, ids2 = sourceIds, ids3 = assigneeIds) => ({
     status_ids: ids1.length ? ids1.join(",") : undefined,
     source_ids: ids2.length ? ids2.join(",") : undefined,
+    assignee_ids: ids3.length ? ids3.join(",") : undefined,
   });
 
   // Auto-count on filter changes (debounced)
@@ -106,7 +127,7 @@ const LeadExport = () => {
       setCountError(null);
       setExportCount(null);
       try {
-        const res = await API.private.getLeadsExportCount(buildFilters(dStatusIds, dSourceIds));
+        const res = await API.private.getLeadsExportCount(buildFilters(dStatusIds, dSourceIds, dAssigneeIds));
         if (!cancelled) {
           if (res.data?.code === "OK") setExportCount(res.data.data.count ?? 0);
           else setCountError(res.data?.error || "Failed to get count");
@@ -121,7 +142,7 @@ const LeadExport = () => {
     return () => {
       cancelled = true;
     };
-  }, [dStatusIds, dSourceIds]);
+  }, [dStatusIds, dSourceIds, dAssigneeIds]);
 
   const manualRefresh = async () => {
     setCountLoading(true);
@@ -165,6 +186,7 @@ const LeadExport = () => {
   const resetFilters = () => {
     setStatusIds([]);
     setSourceIds([]);
+    setAssigneeIds([]);
     setExportCount(null);
   };
 
@@ -206,7 +228,7 @@ const LeadExport = () => {
                 </div>
               ) : (
                 <div className="p-6 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <MultiSelect
                       label="Statuses"
                       placeholder="Select statuses"
@@ -220,6 +242,13 @@ const LeadExport = () => {
                       options={sources}
                       value={sourceIds}
                       onChange={(vals) => setSourceIds(vals)}
+                    />
+                    <MultiSelect
+                      label="Agents"
+                      placeholder="Select agents"
+                      options={assigneeOptions}
+                      value={assigneeIds}
+                      onChange={(vals) => setAssigneeIds(vals)}
                     />
                   </div>
 
@@ -245,6 +274,18 @@ const LeadExport = () => {
                         sourceIds.map((id) => (
                           <Pill key={`sr-${id}`} onRemove={() => setSourceIds((s) => s.filter((x) => x !== id))}>
                             {labelFor(sources, id)}
+                          </Pill>
+                        ))
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs uppercase tracking-wide text-gray-500">Selected Agents:</span>
+                      {assigneeIds.length === 0 ? (
+                        <span className="text-xs text-gray-500">None</span>
+                      ) : (
+                        assigneeIds.map((id) => (
+                          <Pill key={`ag-${id}`} onRemove={() => setAssigneeIds((s) => s.filter((x) => x !== id))}>
+                            {labelFor(assigneeOptions, id)}
                           </Pill>
                         ))
                       )}
@@ -282,12 +323,12 @@ const LeadExport = () => {
                     loadingLookups
                       ? "Loading filters…"
                       : countLoading
-                      ? "Counting…"
-                      : exportCount === null
-                      ? "Waiting for count…"
-                      : exportCount === 0
-                      ? "No leads match filters"
-                      : `Export ${exportCount} leads`
+                        ? "Counting…"
+                        : exportCount === null
+                          ? "Waiting for count…"
+                          : exportCount === 0
+                            ? "No leads match filters"
+                            : `Export ${exportCount} leads`
                   }
                 >
                   {downloading ? "Preparing…" : exportCount !== null ? `Export ${exportCount} leads` : "Export"}
@@ -323,7 +364,7 @@ const LeadExport = () => {
               You’re about to export <span className="font-semibold">{exportCount ?? 0}</span> lead
               {exportCount === 1 ? "" : "s"} to CSV.
             </p>
-            {(statusIds.length > 0 || sourceIds.length > 0) && (
+            {(statusIds.length > 0 || sourceIds.length > 0 || assigneeIds.length > 0) && (
               <div className="space-y-2">
                 <div className="text-sm text-gray-600">Applied filters:</div>
                 <div className="flex flex-wrap gap-2">
@@ -333,7 +374,10 @@ const LeadExport = () => {
                   {sourceIds.map((id) => (
                     <Pill key={`sr-c-${id}`}>Source: {labelFor(sources, id)}</Pill>
                   ))}
-                  {statusIds.length === 0 && sourceIds.length === 0 && (
+                  {assigneeIds.map((id) => (
+                    <Pill key={`ag-c-${id}`}>Agent: {labelFor(assigneeOptions, id)}</Pill>
+                  ))}
+                  {statusIds.length === 0 && sourceIds.length === 0 && assigneeIds.length === 0 && (
                     <span className="text-sm text-gray-600">None</span>
                   )}
                 </div>
